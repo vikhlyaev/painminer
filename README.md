@@ -202,67 +202,67 @@ core_filter:
     max_user_actions: 3
 ```
 
-## Sample Output
+## Примеры вывода
 
-### Markdown Report
+### Markdown отчет
 
 ```markdown
-# Painminer Report
+# Отчет Painminer
 
-_Generated: 2025-01-20 12:00:00 UTC_
+_Создан: 2025-01-20 12:00:00 UTC_
 
-## Configuration Summary
+## Сводка конфигурации
 
-### Subreddits
-- **r/ADHD**: 30 days, min 10 upvotes, max 200 posts
-- **r/productivity**: 30 days, min 15 upvotes, max 150 posts
+### Subreddit-ы
+- **r/ADHD**: 30 дней, минимум 10 лайков, максимум 200 постов
+- **r/productivity**: 30 дней, минимум 15 лайков, максимум 150 постов
 
 ---
 
-## Top Pain Clusters
+## Топ кластеров проблем
 
 ### #1: FocusConcentration
 
-- **Count**: 45 pain statements
-- **Avg Score**: 32.5
-- **Total Score**: 1462
+- **Количество**: 45 утверждений о проблемах
+- **Средний рейтинг**: 32.5
+- **Общий рейтинг**: 1462
 
-**Examples:**
-1. _i struggle with staying focused at work for more than 20 minutes_
-2. _focusing on tasks is really hard when there are distractions_
-3. _i keep losing focus and dont know how to get back on track_
+**Примеры:**
+1. _мне сложно сохранять фокус на работе более 20 минут_
+2. _концентрироваться на задачах очень сложно, когда есть отвлекающие факторы_
+3. _я постоянно теряю фокус и не знаю, как вернуться на правильный путь_
 
 ---
 
-## Candidate iOS App Ideas
+## Кандидаты идей iOS приложений
 
 ### #1: FocusTimer
 
-**Complexity**: S
+**Сложность**: S
 
-**Problem**: Users report: "i struggle with staying focused at work..."
+**Проблема**: Пользователи сообщают: "мне сложно сохранять фокус на работе..."
 
-**Target User**: People interested in ADHD, productivity topics who need timer functionality
+**Целевой пользователь**: Люди, интересующиеся темами ADHD, продуктивности, которым нужен функционал таймера
 
-**Core Functions**:
-- Start/stop countdown or stopwatch
-- Save timer presets for quick access
-- Background timer with alerts
+**Основные функции**:
+- Запуск/остановка обратного отсчета или секундомера
+- Сохранение предустановок таймера для быстрого доступа
+- Фоновый таймер с уведомлениями
 
-**Screens**:
+**Экраны**:
 - TimerView
 - Presets
 
-**Local Data**:
-- Timer presets
-- Session history
+**Локальные данные**:
+- Предустановки таймера
+- История сеансов
 
-**Reddit Evidence**:
-- 45 mentions
-- Avg score: 32.5
+**Свидетельства из Reddit**:
+- 45 упоминаний
+- Средний рейтинг: 32.5
 ```
 
-### JSON Report
+### JSON отчет
 
 ```json
 {
@@ -275,9 +275,9 @@ _Generated: 2025-01-20 12:00:00 UTC_
   "ideas": [
     {
       "idea_name": "FocusTimer",
-      "problem_statement": "Users report: \"i struggle with staying focused...\"",
-      "target_user": "People interested in ADHD topics...",
-      "core_functions": ["Start/stop countdown...", "..."],
+      "problem_statement": "Пользователи сообщают: \"мне сложно сохранять фокус...\"",
+      "target_user": "Люди, интересующиеся темами ADHD...",
+      "core_functions": ["Запуск/остановка обратного отсчета...", "..."],
       "screens": ["TimerView", "Presets"],
       "mvp_complexity": "S",
       "reddit_evidence": {
@@ -289,68 +289,68 @@ _Generated: 2025-01-20 12:00:00 UTC_
 }
 ```
 
-## Running Tests
+## Запуск тестов
 
 ```bash
-# Install dev dependencies
+# Установка зависимостей для разработки
 pip install -e ".[dev]"
 
-# Run all tests
+# Запуск всех тестов
 pytest
 
-# Run with coverage
+# Запуск с покрытием кода
 pytest --cov=painminer
 
-# Run specific test file
+# Запуск конкретного тестового файла
 pytest tests/test_extract.py -v
 ```
 
-## Project Structure
+## Структура проекта
 
 ```
 painminer/
-├── __init__.py         # Package initialization
-├── __main__.py         # Entry point for python -m
-├── cli.py              # Command-line interface
-├── config.py           # Configuration loading and validation
-├── models.py           # Data models (PainItem, Cluster, AppIdea, etc.)
-├── network.py          # Network utilities, proxy support, throttling
-├── cache.py            # File-based caching
-├── utils.py            # Utility functions
-├── reddit_client.py    # Reddit API client using PRAW
-├── extract.py          # Pain statement extraction
-├── cluster.py          # Clustering algorithms
-├── core_filter.py      # Core scope filtering
-├── ideas.py            # App idea generation
-└── output.py           # Markdown and JSON output writers
+├── __init__.py         # Инициализация пакета
+├── __main__.py         # Точка входа для python -m
+├── cli.py              # Интерфейс командной строки
+├── config.py           # Загрузка и валидация конфигурации
+├── models.py           # Модели данных (PainItem, Cluster, AppIdea, и т.д.)
+├── network.py          # Сетевые утилиты, поддержка прокси, троттлинг
+├── cache.py            # Файловое кеширование
+├── utils.py            # Вспомогательные функции
+├── reddit_client.py    # Клиент Reddit API с использованием PRAW
+├── extract.py          # Извлечение утверждений о проблемах
+├── cluster.py          # Алгоритмы кластеризации
+├── core_filter.py      # Фильтрация основного объема
+├── ideas.py            # Генерация идей приложений
+└── output.py           # Генераторы Markdown и JSON отчетов
 
 tests/
 ├── __init__.py
-├── test_extract.py     # Tests for extraction
-├── test_cluster.py     # Tests for clustering
-└── test_core_filter.py # Tests for filtering
+├── test_extract.py     # Тесты извлечения
+├── test_cluster.py     # Тесты кластеризации
+└── test_core_filter.py # Тесты фильтрации
 ```
 
-## Rate Limits & Being a Good Citizen
+## Ограничения частоты запросов и хорошие манеры
 
-This tool respects Reddit's API guidelines:
+Этот инструмент соблюдает рекомендации API Reddit:
 
-- **Throttling**: Configurable delays between requests (default: 800-2500ms)
-- **Retries**: Exponential backoff on failures
-- **Caching**: Results are cached to minimize repeated API calls
-- **User Agent**: Identifies as a personal research tool
+- **Троттлинг**: Настраиваемые задержки между запросами (по умолчанию: 800-2500мс)
+- **Повторные попытки**: Экспоненциальная отсрочка при сбоях
+- **Кеширование**: Результаты кешируются для минимизации повторных вызовов API
+- **User Agent**: Идентифицируется как инструмент для личных исследований
 
-Please:
-- Don't reduce delays below recommended minimums
-- Use caching to avoid unnecessary API calls
-- Don't run the tool excessively
-- Respect Reddit's terms of service
+Пожалуйста:
+- Не уменьшайте задержки ниже рекомендуемых минимумов
+- Используйте кеширование, чтобы избежать ненужных вызовов API
+- Не запускайте инструмент чрезмерно часто
+- Соблюдайте условия обслуживания Reddit
 
-## Troubleshooting
+## Устранение неполадок
 
-### "Environment variable not set" error
+### Ошибка "Environment variable not set"
 
-Make sure you've exported all required environment variables:
+Убедитесь, что вы экспортировали все необходимые переменные окружения:
 
 ```bash
 export REDDIT_CLIENT_ID="..."
@@ -359,28 +359,28 @@ export REDDIT_USERNAME="..."
 export REDDIT_PASSWORD="..."
 ```
 
-### "Authentication failed" error
+### Ошибка "Authentication failed"
 
-- Verify your Reddit app is type "script"
-- Check that username and password are correct
-- Ensure the app is authorized for your account
+- Убедитесь, что ваше приложение Reddit имеет тип "script"
+- Проверьте правильность имени пользователя и пароля
+- Убедитесь, что приложение авторизовано для вашего аккаунта
 
-### "No pain statements extracted" warning
+### Предупреждение "No pain statements extracted"
 
-- Check your `include_phrases` configuration
-- Lower `min_pain_length` if statements are too short
-- Verify subreddit names are correct
+- Проверьте конфигурацию `include_phrases`
+- Уменьшите `min_pain_length`, если утверждения слишком короткие
+- Убедитесь в правильности имен subreddit-ов
 
-### "Rate limited" errors
+### Ошибки "Rate limited"
 
-- Increase `min_delay_ms` and `max_delay_ms`
-- Reduce `max_posts` per subreddit
-- Wait and try again later
+- Увеличьте `min_delay_ms` и `max_delay_ms`
+- Уменьшите `max_posts` на subreddit
+- Подождите и попробуйте снова позже
 
-## License
+## Лицензия
 
-MIT License - for personal research use only.
+Лицензия MIT - только для личного исследования.
 
-## Disclaimer
+## Отказ от ответственности
 
-This tool is for personal research purposes only. Use responsibly and in accordance with Reddit's terms of service. The generated app ideas are suggestions based on observed patterns and should be validated with additional research.
+Этот инструмент предназначен только для личных исследований. Используйте ответственно и в соответствии с условиями обслуживания Reddit. Сгенерированные идеи приложений являются предложениями, основанными на наблюдаемых паттернах, и должны быть подтверждены дополнительными исследованиями.

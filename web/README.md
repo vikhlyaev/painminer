@@ -1,117 +1,117 @@
-# Painminer Web UI
+# Веб-интерфейс Painminer
 
-A modern web interface for Painminer built with Next.js and Tailwind CSS.
+Современный веб-интерфейс для Painminer, построенный с использованием Next.js и Tailwind CSS.
 
-## Features
+## Возможности
 
-- **Interactive Analysis Form**: Configure subreddits, filters, and clustering options
-- **Real-time Progress Tracking**: Watch analysis progress with live updates
-- **Beautiful Results View**: Browse app ideas and pain clusters with detailed information
-- **Job History**: Track past analyses and revisit results
-- **Local Credential Storage**: Reddit API credentials are stored locally in browser
-- **Cache Management**: View cache stats and clear cached data
+- **Интерактивная форма анализа**: Настройка subreddit-ов, фильтров и параметров кластеризации
+- **Отслеживание прогресса в реальном времени**: Наблюдение за прогрессом анализа с живыми обновлениями
+- **Красивое отображение результатов**: Просмотр идей приложений и кластеров проблем с подробной информацией
+- **История заданий**: Отслеживание прошлых анализов и пересмотр результатов
+- **Локальное хранение учетных данных**: Учетные данные Reddit API хранятся локально в браузере
+- **Управление кешем**: Просмотр статистики кеша и очистка кешированных данных
 
-## Tech Stack
+## Технологический стек
 
-- **Next.js 16** - React framework with App Router
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Query** - Data fetching and state management
-- **Lucide React** - Beautiful icons
-- **TypeScript** - Type safety
+- **Next.js 16** - React фреймворк с App Router
+- **Tailwind CSS** - CSS фреймворк utility-first
+- **React Query** - Загрузка данных и управление состоянием
+- **Lucide React** - Красивые иконки
+- **TypeScript** - Типобезопасность
 
-## Getting Started
+## Начало работы
 
-### Prerequisites
+### Предварительные требования
 
 - Node.js 18+
-- npm or yarn
-- Running Painminer API (FastAPI backend)
+- npm или yarn
+- Запущенный API Painminer (FastAPI бэкэнд)
 
-### Installation
+### Установка
 
 ```bash
-# Navigate to web directory
+# Перейдите в директорию web
 cd web
 
-# Install dependencies
+# Установите зависимости
 npm install
 
-# Copy environment file
+# Скопируйте файл окружения
 cp .env.example .env.local
 
-# Edit .env.local if needed (default API URL is http://localhost:8000)
+# Отредактируйте .env.local при необходимости (URL API по умолчанию: http://localhost:8000)
 ```
 
-### Development
+### Разработка
 
 ```bash
-# Start the development server
+# Запустите сервер разработки
 npm run dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
 
-### Production Build
+### Сборка для продакшена
 
 ```bash
-# Build for production
+# Сборка для продакшена
 npm run build
 
-# Start production server
+# Запуск продакшен сервера
 npm start
 ```
 
-## Running with Backend
+## Запуск с бэкэндом
 
-1. Start the FastAPI backend:
+1. Запустите FastAPI бэкэнд:
 
 ```bash
-# From project root
+# Из корня проекта
 uvicorn painminer.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-2. Start the web UI:
+2. Запустите веб-интерфейс:
 
 ```bash
-# From web directory
+# Из директории web
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
+3. Откройте [http://localhost:3000](http://localhost:3000) в вашем браузере
 
-## Project Structure
+## Структура проекта
 
 ```
 web/
 ├── src/
 │   ├── app/
-│   │   ├── globals.css      # Global styles
-│   │   ├── layout.tsx       # Root layout with providers
-│   │   └── page.tsx         # Home page
+│   │   ├── globals.css      # Глобальные стили
+│   │   ├── layout.tsx       # Корневой макет с провайдерами
+│   │   └── page.tsx         # Главная страница
 │   ├── components/
-│   │   ├── analysis-form.tsx    # Main form for configuring analysis
-│   │   ├── dashboard.tsx        # Main dashboard component
-│   │   ├── job-progress.tsx     # Progress tracking component
-│   │   ├── jobs-list.tsx        # Job history sidebar
-│   │   ├── providers.tsx        # React Query provider
-│   │   ├── results-view.tsx     # Results display component
-│   │   └── status-bar.tsx       # API connection status
+│   │   ├── analysis-form.tsx    # Основная форма для настройки анализа
+│   │   ├── dashboard.tsx        # Основной компонент панели управления
+│   │   ├── job-progress.tsx     # Компонент отслеживания прогресса
+│   │   ├── jobs-list.tsx        # Боковая панель истории заданий
+│   │   ├── providers.tsx        # Провайдер React Query
+│   │   ├── results-view.tsx     # Компонент отображения результатов
+│   │   └── status-bar.tsx       # Статус подключения к API
 │   └── lib/
-│       ├── api.ts           # API client functions
-│       ├── hooks.ts         # React Query hooks
-│       └── types.ts         # TypeScript types
-├── .env.example             # Environment variables template
-├── .env.local               # Local environment variables
+│       ├── api.ts           # Функции API клиента
+│       ├── hooks.ts         # Хуки React Query
+│       └── types.ts         # TypeScript типы
+├── .env.example             # Шаблон переменных окружения
+├── .env.local               # Локальные переменные окружения
 ├── package.json
 └── README.md
 ```
 
-## Environment Variables
+## Переменные окружения
 
-| Variable | Description | Default |
+| Переменная | Описание | По умолчанию |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | URL of the Painminer API | `http://localhost:8000` |
+| `NEXT_PUBLIC_API_URL` | URL API Painminer | `http://localhost:8000` |
 
-## License
+## Лицензия
 
 MIT
