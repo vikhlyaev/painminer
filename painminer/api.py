@@ -4,13 +4,10 @@ FastAPI backend for painminer web UI.
 Provides REST API endpoints for the painminer pipeline.
 """
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Optional
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -125,9 +122,9 @@ class JobInfo(BaseModel):
     progress: int = 0
     message: str = ""
     created_at: datetime
-    completed_at: Optional[datetime] = None
-    result: Optional[dict] = None
-    error: Optional[str] = None
+    completed_at: datetime | None = None
+    result: dict | None = None
+    error: str | None = None
 
 
 class PainItemResponse(BaseModel):
@@ -191,7 +188,7 @@ def build_config(request: AnalysisRequest) -> PainminerConfig:
         )
         for s in request.subreddits
     ]
-    
+
     reddit = RedditConfig(
         client_id=request.reddit.client_id,
         client_secret=request.reddit.client_secret,
@@ -199,20 +196,20 @@ def build_config(request: AnalysisRequest) -> PainminerConfig:
         password=request.reddit.password,
         user_agent=request.reddit.user_agent,
     )
-    
+
     filters = FiltersConfig(
         include_phrases=request.filters.include_phrases,
         exclude_phrases=request.filters.exclude_phrases,
         min_pain_length=request.filters.min_pain_length,
     )
-    
+
     clustering = ClusteringConfig(
         method=request.clustering.method,
         k_min=request.clustering.k_min,
         k_max=request.clustering.k_max,
         random_state=request.clustering.random_state,
     )
-    
+
     # Build network config with proxy settings
     network = NetworkConfig(
         timeout_sec=request.network.timeout_sec,
@@ -225,7 +222,7 @@ def build_config(request: AnalysisRequest) -> PainminerConfig:
         proxies_pool=request.network.proxy.pool,
         rotate_every_requests=request.network.proxy.rotate_every_requests,
     )
-    
+
     return PainminerConfig(
         subreddits=subreddits,
         reddit=reddit,
@@ -241,79 +238,79 @@ def build_config(request: AnalysisRequest) -> PainminerConfig:
 async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
     """Run the analysis pipeline in background."""
     job = jobs[job_id]
-    
+
     try:
         job.status = JobStatus.RUNNING
         job.message = "Building configuration..."
         job.progress = 5
-        
+
         config = build_config(request)
-        
+
         # Create Reddit client
         job.message = "Connecting to Reddit..."
         job.progress = 10
-        
+
         reddit_client = create_reddit_client(config, use_cache=request.use_cache)
-        
+
         # Fetch data
         job.message = "Fetching Reddit data..."
         job.progress = 15
-        
+
         posts, comments = reddit_client.fetch_all(config)
-        
+
         job.message = f"Fetched {len(posts)} posts and {len(comments)} comments"
         job.progress = 40
-        
+
         if not posts:
             raise ValueError("No posts fetched. Check subreddit names and filters.")
-        
+
         # Extract pain statements
         job.message = "Extracting pain statements..."
         job.progress = 50
-        
+
         extractor = create_extractor(config.filters)
         pain_items = extractor.extract_all(posts, comments)
-        
+
         job.message = f"Extracted {len(pain_items)} pain statements"
         job.progress = 60
-        
+
         if not pain_items:
             raise ValueError("No pain statements extracted. Check include_phrases.")
-        
+
         # Cluster
         job.message = "Clustering pain statements..."
         job.progress = 70
-        
+
         clusterer = create_clusterer(config.clustering)
         clusters = clusterer.cluster(pain_items)
-        
+
         job.message = f"Created {len(clusters)} clusters"
         job.progress = 80
-        
+
         # Filter
         job.message = "Filtering clusters..."
         job.progress = 85
-        
+
         core_filter = create_core_filter(config.core_filter)
         passing_clusters = core_filter.get_passing_clusters(clusters)
-        
+
         # Generate ideas
         job.message = "Generating app ideas..."
         job.progress = 90
-        
+
         idea_generator = create_idea_generator()
         ideas = idea_generator.generate_all(passing_clusters)
-        
+
         # Sort ideas
         ideas.sort(
             key=lambda x: (x.cluster.count if x.cluster else 0, x.reddit_evidence.get('avg_score', 0)),
             reverse=True,
         )
-        
+
         # Build response
         job.progress = 95
         job.message = "Preparing results..."
-        
+
         clusters_response = []
         for cluster in clusters[:15]:  # Top 15
             items_response = [
@@ -328,7 +325,7 @@ async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
                 )
                 for item in cluster.items[:10]  # Top 10 items per cluster
             ]
-            
+
             clusters_response.append(ClusterResponse(
                 cluster_id=cluster.cluster_id,
                 label=cluster.label,
@@ -338,7 +335,7 @@ async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
                 example_texts=cluster.example_texts[:3],
                 items=items_response,
             ))
-        
+
         ideas_response = [
             AppIdeaResponse(
                 idea_name=idea.idea_name,
@@ -353,7 +350,7 @@ async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
             )
             for idea in ideas
         ]
-        
+
         result = AnalysisResult(
             total_posts=len(posts),
             total_comments=len(comments),
@@ -363,13 +360,13 @@ async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
             clusters=clusters_response,
             ideas=ideas_response,
         )
-        
+
         job.status = JobStatus.COMPLETED
         job.progress = 100
         job.message = "Analysis completed successfully!"
         job.completed_at = datetime.utcnow()
         job.result = result.model_dump()
-        
+
     except Exception as e:
         logger.exception(f"Job {job_id} failed")
         job.status = JobStatus.FAILED
@@ -381,7 +378,7 @@ async def run_analysis(job_id: str, request: AnalysisRequest) -> None:
 # ============== API Endpoints ==============
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok", "service": "painminer-api", "version": "0.1.0"}
 
@@ -390,10 +387,10 @@ async def root():
 async def start_analysis(
     request: AnalysisRequest,
     background_tasks: BackgroundTasks,
-):
+) -> JobInfo:
     """Start a new analysis job."""
     job_id = str(uuid.uuid4())
-    
+
     job = JobInfo(
         job_id=job_id,
         status=JobStatus.PENDING,
@@ -402,46 +399,46 @@ async def start_analysis(
         created_at=datetime.utcnow(),
     )
     jobs[job_id] = job
-    
+
     background_tasks.add_task(run_analysis, job_id, request)
-    
+
     return job
 
 
 @app.get("/api/jobs/{job_id}", response_model=JobInfo)
-async def get_job_status(job_id: str):
+async def get_job_status(job_id: str) -> JobInfo:
     """Get the status of a job."""
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     return jobs[job_id]
 
 
 @app.get("/api/jobs", response_model=list[JobInfo])
-async def list_jobs():
+async def list_jobs() -> list[JobInfo]:
     """List all jobs."""
     return list(jobs.values())
 
 
 @app.delete("/api/jobs/{job_id}")
-async def delete_job(job_id: str):
+async def delete_job(job_id: str) -> dict[str, str]:
     """Delete a job."""
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     del jobs[job_id]
     return {"status": "deleted", "job_id": job_id}
 
 
 @app.get("/api/cache/stats")
-async def get_cache_stats():
+async def get_cache_stats() -> dict:
     """Get cache statistics."""
     cache = RedditCache()
     return cache.get_stats()
 
 
 @app.post("/api/cache/clear")
-async def clear_cache():
+async def clear_cache() -> dict[str, object]:
     """Clear the cache."""
     cache = RedditCache()
     count = cache.clear()
@@ -449,7 +446,7 @@ async def clear_cache():
 
 
 @app.get("/api/presets/subreddits")
-async def get_subreddit_presets():
+async def get_subreddit_presets() -> list[dict[str, str]]:
     """Get preset subreddit configurations."""
     return [
         {"name": "ADHD", "description": "ADHD community - productivity and focus issues"},
@@ -466,7 +463,7 @@ async def get_subreddit_presets():
 
 
 @app.get("/api/presets/phrases")
-async def get_phrase_presets():
+async def get_phrase_presets() -> dict[str, list[str]]:
     """Get preset include/exclude phrases."""
     return {
         "include": [

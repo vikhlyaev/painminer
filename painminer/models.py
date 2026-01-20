@@ -7,7 +7,6 @@ All core data structures used throughout the pipeline.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 
 class SourceType(str, Enum):
@@ -27,7 +26,7 @@ class MVPComplexity(str, Enum):
 class PainItem:
     """
     A single pain statement extracted from Reddit.
-    
+
     Attributes:
         id: Unique identifier for this pain item
         subreddit: Name of the subreddit
@@ -48,7 +47,7 @@ class PainItem:
     text: str
     url: str
     raw_text: str = ""
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {
@@ -62,7 +61,7 @@ class PainItem:
             "url": self.url,
             "raw_text": self.raw_text,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict) -> "PainItem":
         """Create from dictionary."""
@@ -83,7 +82,7 @@ class PainItem:
 class Cluster:
     """
     A cluster of related pain statements.
-    
+
     Attributes:
         cluster_id: Unique cluster identifier
         label: Short descriptive label
@@ -100,13 +99,13 @@ class Cluster:
     items: list[PainItem]
     avg_score: float = 0.0
     total_score: int = 0
-    
+
     def __post_init__(self) -> None:
         """Calculate derived fields."""
         if self.items:
             self.total_score = sum(item.score for item in self.items)
             self.avg_score = self.total_score / len(self.items)
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {
@@ -124,7 +123,7 @@ class Cluster:
 class SolutionShape:
     """
     Inferred solution shape for a cluster.
-    
+
     Attributes:
         shape_type: Type of solution (reminder, checklist, timer, etc.)
         keywords: Keywords that led to this shape
@@ -145,7 +144,7 @@ class SolutionShape:
     estimated_screens: int = 1
     estimated_actions: int = 1
     solvable_locally: bool = True
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {
@@ -165,7 +164,7 @@ class SolutionShape:
 class AppIdea:
     """
     Generated iOS app idea from a cluster.
-    
+
     Attributes:
         idea_name: PascalCase app name
         problem_statement: What problem this solves
@@ -187,8 +186,8 @@ class AppIdea:
     minimal_notifications: list[str]
     mvp_complexity: MVPComplexity
     reddit_evidence: dict
-    cluster: Optional[Cluster] = None
-    
+    cluster: Cluster | None = None
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         result = {
@@ -211,7 +210,7 @@ class AppIdea:
 class RawRedditPost:
     """
     Raw Reddit post data before processing.
-    
+
     Attributes:
         id: Reddit post ID
         subreddit: Subreddit name
@@ -230,7 +229,7 @@ class RawRedditPost:
     created_utc: float
     url: str
     num_comments: int
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {
@@ -243,7 +242,7 @@ class RawRedditPost:
             "url": self.url,
             "num_comments": self.num_comments,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict) -> "RawRedditPost":
         """Create from dictionary."""
@@ -263,7 +262,7 @@ class RawRedditPost:
 class RawRedditComment:
     """
     Raw Reddit comment data before processing.
-    
+
     Attributes:
         id: Reddit comment ID
         post_id: Parent post ID
@@ -280,7 +279,7 @@ class RawRedditComment:
     score: int
     created_utc: float
     permalink: str
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {
@@ -292,7 +291,7 @@ class RawRedditComment:
             "created_utc": self.created_utc,
             "permalink": self.permalink,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict) -> "RawRedditComment":
         """Create from dictionary."""

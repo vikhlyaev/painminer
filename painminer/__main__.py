@@ -5,6 +5,7 @@ Usage: python -m painminer [command] [options]
 """
 
 import sys
+
 from painminer.cli import main
 
 if __name__ == "__main__":

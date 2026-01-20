@@ -9,7 +9,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -119,7 +119,7 @@ class OutputConfig:
 class PainminerConfig:
     """
     Complete painminer configuration.
-    
+
     This is the root configuration object containing all settings.
     """
     subreddits: list[SubredditConfig]
@@ -135,20 +135,20 @@ class PainminerConfig:
 def substitute_env_vars(value: str) -> str:
     """
     Substitute environment variables in a string.
-    
+
     Supports ${VAR_NAME} syntax.
-    
+
     Args:
         value: String potentially containing ${VAR_NAME} patterns
-        
+
     Returns:
         String with environment variables substituted
-        
+
     Raises:
         ConfigError: If required environment variable is not set
     """
     pattern = r'\$\{([^}]+)\}'
-    
+
     def replace_var(match: re.Match) -> str:
         var_name = match.group(1)
         env_value = os.environ.get(var_name)
@@ -158,17 +158,17 @@ def substitute_env_vars(value: str) -> str:
                 f"Please set it before running painminer."
             )
         return env_value
-    
+
     return re.sub(pattern, replace_var, value)
 
 
 def process_env_vars(obj: Any) -> Any:
     """
     Recursively process environment variables in a config object.
-    
+
     Args:
         obj: Configuration object (dict, list, or scalar)
-        
+
     Returns:
         Processed object with environment variables substituted
     """
@@ -198,7 +198,7 @@ def parse_reddit_config(data: dict) -> RedditConfig:
     for key in required:
         if key not in data or not data[key]:
             raise ConfigError(f"Reddit config missing required field: {key}")
-    
+
     return RedditConfig(
         client_id=data["client_id"],
         client_secret=data["client_secret"],
@@ -208,14 +208,14 @@ def parse_reddit_config(data: dict) -> RedditConfig:
     )
 
 
-def parse_network_config(data: Optional[dict]) -> NetworkConfig:
+def parse_network_config(data: dict | None) -> NetworkConfig:
     """Parse network configuration."""
     if not data:
         return NetworkConfig()
-    
+
     proxies = data.get("proxies", {})
     single = proxies.get("single", {})
-    
+
     return NetworkConfig(
         timeout_sec=data.get("timeout_sec", 20),
         proxies_enabled=proxies.get("enabled", False),
@@ -229,11 +229,11 @@ def parse_network_config(data: Optional[dict]) -> NetworkConfig:
     )
 
 
-def parse_throttling_config(data: Optional[dict]) -> ThrottlingConfig:
+def parse_throttling_config(data: dict | None) -> ThrottlingConfig:
     """Parse throttling configuration."""
     if not data:
         return ThrottlingConfig()
-    
+
     return ThrottlingConfig(
         min_delay_ms=data.get("min_delay_ms", 800),
         max_delay_ms=data.get("max_delay_ms", 2500),
@@ -242,11 +242,11 @@ def parse_throttling_config(data: Optional[dict]) -> ThrottlingConfig:
     )
 
 
-def parse_filters_config(data: Optional[dict]) -> FiltersConfig:
+def parse_filters_config(data: dict | None) -> FiltersConfig:
     """Parse filters configuration."""
     if not data:
         return FiltersConfig()
-    
+
     return FiltersConfig(
         include_phrases=data.get("include_phrases", []),
         exclude_phrases=data.get("exclude_phrases", []),
@@ -254,18 +254,18 @@ def parse_filters_config(data: Optional[dict]) -> FiltersConfig:
     )
 
 
-def parse_clustering_config(data: Optional[dict]) -> ClusteringConfig:
+def parse_clustering_config(data: dict | None) -> ClusteringConfig:
     """Parse clustering configuration."""
     if not data:
         return ClusteringConfig()
-    
+
     method = data.get("method", "tfidf_kmeans")
     if method not in ("tfidf_kmeans", "simple_hash"):
         raise ConfigError(
             f"Invalid clustering method: {method}. "
             f"Must be 'tfidf_kmeans' or 'simple_hash'."
         )
-    
+
     return ClusteringConfig(
         method=method,
         k_min=data.get("k_min", 5),
@@ -274,14 +274,14 @@ def parse_clustering_config(data: Optional[dict]) -> ClusteringConfig:
     )
 
 
-def parse_core_filter_config(data: Optional[dict]) -> CoreFilterConfig:
+def parse_core_filter_config(data: dict | None) -> CoreFilterConfig:
     """Parse core filter configuration."""
     if not data:
         return CoreFilterConfig()
-    
+
     reject_if = data.get("reject_if", {})
     accept_if = data.get("accept_if", {})
-    
+
     return CoreFilterConfig(
         reject_if=CoreFilterRejectConfig(
             requires_social_network=reject_if.get("requires_social_network", True),
@@ -298,11 +298,11 @@ def parse_core_filter_config(data: Optional[dict]) -> CoreFilterConfig:
     )
 
 
-def parse_output_config(data: Optional[dict]) -> OutputConfig:
+def parse_output_config(data: dict | None) -> OutputConfig:
     """Parse output configuration."""
     if not data:
         return OutputConfig()
-    
+
     return OutputConfig(
         top_clusters=data.get("top_clusters", 15),
         include_examples_per_cluster=data.get("include_examples_per_cluster", 3),
@@ -312,50 +312,50 @@ def parse_output_config(data: Optional[dict]) -> OutputConfig:
 def load_config(config_path: str | Path) -> PainminerConfig:
     """
     Load and validate configuration from a YAML file.
-    
+
     Args:
         config_path: Path to the YAML configuration file
-        
+
     Returns:
         Validated PainminerConfig object
-        
+
     Raises:
         ConfigError: If configuration is invalid or file not found
         FileNotFoundError: If config file doesn't exist
     """
     path = Path(config_path)
-    
+
     if not path.exists():
         raise FileNotFoundError(f"Configuration file not found: {path}")
-    
+
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw_config = yaml.safe_load(f)
     except yaml.YAMLError as e:
-        raise ConfigError(f"Invalid YAML in config file: {e}")
-    
+        raise ConfigError(f"Invalid YAML in config file: {e}") from e
+
     if not raw_config:
         raise ConfigError("Configuration file is empty")
-    
+
     # Process environment variables
     try:
         config_data = process_env_vars(raw_config)
     except ConfigError:
         raise
-    
+
     # Validate required sections
     if "subreddits" not in config_data or not config_data["subreddits"]:
         raise ConfigError("Configuration must include at least one subreddit")
-    
+
     if "reddit" not in config_data:
         raise ConfigError("Configuration must include reddit credentials")
-    
+
     # Parse all sections
     subreddits = [
-        parse_subreddit_config(sub) 
+        parse_subreddit_config(sub)
         for sub in config_data["subreddits"]
     ]
-    
+
     return PainminerConfig(
         subreddits=subreddits,
         reddit=parse_reddit_config(config_data["reddit"]),
@@ -371,15 +371,15 @@ def load_config(config_path: str | Path) -> PainminerConfig:
 def validate_config(config: PainminerConfig) -> list[str]:
     """
     Validate configuration and return list of warnings.
-    
+
     Args:
         config: Configuration to validate
-        
+
     Returns:
         List of warning messages (empty if no warnings)
     """
     warnings = []
-    
+
     # Check subreddit settings
     for sub in config.subreddits:
         if sub.max_posts > 500:
@@ -392,18 +392,18 @@ def validate_config(config: PainminerConfig) -> list[str]:
                 f"Subreddit {sub.name}: period_days={sub.period_days} is very long, "
                 f"Reddit search may not return accurate results"
             )
-    
+
     # Check throttling
     if config.throttling.min_delay_ms < 500:
         warnings.append(
             "min_delay_ms < 500 may trigger Reddit rate limits"
         )
-    
+
     # Check clustering
     if config.clustering.k_max < config.clustering.k_min:
         warnings.append(
             f"clustering.k_max ({config.clustering.k_max}) < "
             f"k_min ({config.clustering.k_min}), will use k_min"
         )
-    
+
     return warnings

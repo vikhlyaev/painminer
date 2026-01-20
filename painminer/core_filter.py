@@ -6,7 +6,6 @@ Filters clusters based on feasibility for simple iOS apps.
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 from painminer.config import CoreFilterConfig
 from painminer.models import Cluster, SolutionShape
@@ -118,24 +117,24 @@ def _match_any_pattern(text: str, patterns: list[str]) -> bool:
 def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
     """
     Detect the likely solution shape for a cluster.
-    
+
     Analyzes cluster content to determine what type of app
     would solve the problem.
-    
+
     Args:
         cluster: Cluster to analyze
-        
+
     Returns:
         SolutionShape with detected characteristics
     """
     # Combine all text for analysis
     all_text = " ".join([item.text for item in cluster.items])
     all_text += " " + " ".join(cluster.example_texts)
-    
+
     # Detect shape type
     shape_scores: dict[str, int] = {}
     shape_keywords: dict[str, list[str]] = {}
-    
+
     for shape_type, patterns in SOLUTION_SHAPE_PATTERNS.items():
         score = 0
         matched = []
@@ -147,7 +146,7 @@ def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
         if score > 0:
             shape_scores[shape_type] = score
             shape_keywords[shape_type] = list(set(matched))[:5]
-    
+
     # Get best shape type
     if shape_scores:
         best_shape = max(shape_scores.keys(), key=lambda k: shape_scores[k])
@@ -155,13 +154,13 @@ def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
     else:
         best_shape = "utility"
         keywords = extract_keywords(all_text)[:5]
-    
+
     # Detect rejection signals
     requires_social = _match_any_pattern(all_text, SOCIAL_SIGNALS)
     requires_marketplace = _match_any_pattern(all_text, MARKETPLACE_SIGNALS)
     requires_realtime = _match_any_pattern(all_text, REALTIME_SIGNALS)
     requires_ai = _match_any_pattern(all_text, AI_SIGNALS)
-    
+
     # Estimate complexity
     # Simple heuristics based on shape type
     screen_estimates = {
@@ -175,7 +174,7 @@ def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
         "reference": 1,
         "utility": 2,
     }
-    
+
     action_estimates = {
         "reminder": 2,
         "checklist": 2,
@@ -187,10 +186,10 @@ def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
         "reference": 1,
         "utility": 2,
     }
-    
+
     estimated_screens = screen_estimates.get(best_shape, 2)
     estimated_actions = action_estimates.get(best_shape, 2)
-    
+
     # Adjust for complexity signals
     if requires_social or requires_marketplace:
         estimated_screens += 2
@@ -198,15 +197,15 @@ def _detect_solution_shape(cluster: Cluster) -> SolutionShape:
     if requires_realtime:
         estimated_screens += 1
         estimated_actions += 1
-    
+
     # Determine if solvable locally
     solvable_locally = not (
-        requires_social or 
-        requires_marketplace or 
+        requires_social or
+        requires_marketplace or
         requires_realtime or
         requires_ai
     )
-    
+
     return SolutionShape(
         shape_type=best_shape,
         keywords=keywords,
@@ -232,99 +231,99 @@ class FilterResult:
 class CoreFilter:
     """
     Filters clusters based on feasibility rules.
-    
+
     Applies reject_if and accept_if rules to determine
     which clusters are suitable for simple iOS apps.
     """
-    
+
     def __init__(self, config: CoreFilterConfig) -> None:
         """
         Initialize core filter.
-        
+
         Args:
             config: Core filter configuration
         """
         self.config = config
-    
+
     def filter_cluster(self, cluster: Cluster) -> FilterResult:
         """
         Filter a single cluster.
-        
+
         Args:
             cluster: Cluster to filter
-            
+
         Returns:
             FilterResult with pass/fail status and reasons
         """
         # Detect solution shape
         shape = _detect_solution_shape(cluster)
-        
+
         rejection_reasons: list[str] = []
-        
+
         # Apply reject_if rules
         reject_config = self.config.reject_if
-        
+
         if reject_config.requires_social_network and shape.requires_social:
             rejection_reasons.append("Requires social network features")
-        
+
         if reject_config.requires_marketplace and shape.requires_marketplace:
             rejection_reasons.append("Requires marketplace features")
-        
+
         if reject_config.requires_realtime_sync and shape.requires_realtime:
             rejection_reasons.append("Requires real-time synchronization")
-        
+
         if reject_config.requires_ai_for_value and shape.requires_ai:
             rejection_reasons.append("Requires AI for core value")
-        
+
         # Apply accept_if rules
         accept_config = self.config.accept_if
-        
+
         if accept_config.solvable_locally and not shape.solvable_locally:
             rejection_reasons.append("Cannot be solved with local-only data")
-        
+
         if shape.estimated_screens > accept_config.max_screens:
             rejection_reasons.append(
                 f"Estimated {shape.estimated_screens} screens "
                 f"exceeds max {accept_config.max_screens}"
             )
-        
+
         if shape.estimated_actions > accept_config.max_user_actions:
             rejection_reasons.append(
                 f"Estimated {shape.estimated_actions} actions "
                 f"exceeds max {accept_config.max_user_actions}"
             )
-        
+
         passed = len(rejection_reasons) == 0
-        
+
         return FilterResult(
             cluster=cluster,
             solution_shape=shape,
             passed=passed,
             rejection_reasons=rejection_reasons,
         )
-    
+
     def filter_clusters(self, clusters: list[Cluster]) -> list[FilterResult]:
         """
         Filter multiple clusters.
-        
+
         Args:
             clusters: Clusters to filter
-            
+
         Returns:
             List of FilterResults
         """
         return [self.filter_cluster(cluster) for cluster in clusters]
-    
+
     def get_passing_clusters(
         self,
         clusters: list[Cluster],
     ) -> list[tuple[Cluster, SolutionShape]]:
         """
         Get only clusters that pass the filter.
-        
+
         Args:
             clusters: Clusters to filter
-            
+
         Returns:
             List of (cluster, solution_shape) tuples for passing clusters
         """
@@ -339,10 +338,10 @@ class CoreFilter:
 def create_core_filter(config: CoreFilterConfig) -> CoreFilter:
     """
     Create a configured core filter.
-    
+
     Args:
         config: Core filter configuration
-        
+
     Returns:
         Configured CoreFilter instance
     """
