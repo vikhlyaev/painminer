@@ -1,0 +1,118 @@
+# Painminer Configuration File
+# ============================
+# This is a sample configuration for the painminer CLI tool.
+# Copy this file and fill in your Reddit API credentials.
+
+# Subreddits to analyze
+# Each subreddit can have its own settings
+subreddits:
+  - name: "ADHD"
+    period_days: 30
+    min_upvotes: 10
+    max_posts: 200
+    max_comments_per_post: 50
+  
+  - name: "productivity"
+    period_days: 30
+    min_upvotes: 15
+    max_posts: 150
+    max_comments_per_post: 40
+  
+  - name: "GetMotivated"
+    period_days: 30
+    min_upvotes: 20
+    max_posts: 100
+    max_comments_per_post: 30
+
+# Reddit API credentials
+# These use environment variable substitution with ${VAR_NAME} syntax
+# Set these environment variables before running painminer:
+#   export REDDIT_CLIENT_ID="your_client_id"
+#   export REDDIT_CLIENT_SECRET="your_client_secret"
+#   export REDDIT_USERNAME="your_username"
+#   export REDDIT_PASSWORD="your_password"
+reddit:
+  client_id: "${REDDIT_CLIENT_ID}"
+  client_secret: "${REDDIT_CLIENT_SECRET}"
+  username: "${REDDIT_USERNAME}"
+  password: "${REDDIT_PASSWORD}"
+  user_agent: "painminer/0.1 (personal research; contact: none)"
+
+# Network settings
+network:
+  timeout_sec: 20
+  proxies:
+    enabled: false
+    mode: "single"   # single | pool
+    single:
+      http: ""
+      https: ""
+    pool: []
+    rotate_every_requests: 25
+
+# Rate limiting settings
+# Be a good citizen and don't hammer the Reddit API
+throttling:
+  min_delay_ms: 800      # Minimum delay between requests
+  max_delay_ms: 2500     # Maximum delay between requests
+  max_retries: 4         # Number of retries on failure
+  backoff_base_sec: 2    # Base for exponential backoff
+
+# Pain statement detection filters
+filters:
+  # Phrases that indicate user pain/frustration/needs
+  include_phrases:
+    - "I struggle"
+    - "I keep forgetting"
+    - "I wish"
+    - "How do you"
+    - "Is there an app"
+    - "Anyone else"
+    - "I can't seem to"
+    - "It's so hard to"
+    - "I always forget"
+    - "Does anyone know"
+    - "I need help with"
+    - "frustrated with"
+    - "having trouble"
+    - "can't figure out"
+  
+  # Phrases to exclude (off-topic content)
+  exclude_phrases:
+    - "politics"
+    - "rant"
+    - "meme"
+    - "joke"
+    - "shitpost"
+  
+  # Minimum length for pain statements
+  min_pain_length: 12
+
+# Clustering configuration
+clustering:
+  method: "tfidf_kmeans"   # Options: "tfidf_kmeans" | "simple_hash"
+  k_min: 5                  # Minimum number of clusters
+  k_max: 20                 # Maximum number of clusters
+  random_state: 42          # For reproducibility
+
+# Core scope filter
+# Determines which clusters are feasible for simple iOS apps
+core_filter:
+  # Reject clusters that match these criteria
+  reject_if:
+    requires_social_network: true    # Needs social features
+    requires_marketplace: true       # Needs buy/sell features
+    requires_realtime_sync: true     # Needs real-time collaboration
+    requires_ai_for_value: true      # Core value depends on AI
+  
+  # Accept clusters that match these criteria
+  accept_if:
+    solvable_locally: true           # Can work with local data only
+    max_screens: 3                   # Maximum screens in MVP
+    max_user_actions: 3              # Maximum core user actions
+    value_explained_seconds: 10      # Value can be explained quickly
+
+# Output settings
+output:
+  top_clusters: 15                   # Number of top clusters to show
+  include_examples_per_cluster: 3    # Examples per cluster in output
