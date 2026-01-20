@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Play, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, Play, Loader2, ChevronDown, ChevronUp, Globe } from 'lucide-react';
 import { useSubredditPresets, usePhrasePresets, useStartAnalysis } from '@/lib/hooks';
-import type { SubredditInput, AnalysisRequest, RedditCredentials, FiltersInput, ClusteringInput } from '@/lib/types';
+import type { SubredditInput, AnalysisRequest, RedditCredentials, FiltersInput, ClusteringInput, NetworkConfig, ProxyConfig } from '@/lib/types';
 
 interface AnalysisFormProps {
   onJobStarted: (jobId: string) => void;
@@ -33,6 +33,20 @@ const DEFAULT_CLUSTERING: ClusteringInput = {
   random_state: 42,
 };
 
+const DEFAULT_PROXY: ProxyConfig = {
+  enabled: false,
+  mode: 'single',
+  single_http: '',
+  single_https: '',
+  pool: [],
+  rotate_every_requests: 25,
+};
+
+const DEFAULT_NETWORK: NetworkConfig = {
+  timeout_sec: 20,
+  proxy: DEFAULT_PROXY,
+};
+
 export function AnalysisForm({ onJobStarted }: AnalysisFormProps) {
   const { data: subredditPresets } = useSubredditPresets();
   const { data: phrasePresets } = usePhrasePresets();
@@ -48,10 +62,13 @@ export function AnalysisForm({ onJobStarted }: AnalysisFormProps) {
   });
   const [filters, setFilters] = useState<FiltersInput>(DEFAULT_FILTERS);
   const [clustering, setClustering] = useState<ClusteringInput>(DEFAULT_CLUSTERING);
+  const [network, setNetwork] = useState<NetworkConfig>(DEFAULT_NETWORK);
   const [useCache, setUseCache] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showProxy, setShowProxy] = useState(false);
   const [newIncludePhrase, setNewIncludePhrase] = useState('');
   const [newExcludePhrase, setNewExcludePhrase] = useState('');
+  const [newProxyUrl, setNewProxyUrl] = useState('');
 
   // Load credentials from localStorage
   useEffect(() => {
@@ -111,6 +128,29 @@ export function AnalysisForm({ onJobStarted }: AnalysisFormProps) {
     }
   };
 
+  const addProxyToPool = () => {
+    if (newProxyUrl.trim() && !network.proxy.pool.includes(newProxyUrl.trim())) {
+      setNetwork({
+        ...network,
+        proxy: {
+          ...network.proxy,
+          pool: [...network.proxy.pool, newProxyUrl.trim()],
+        },
+      });
+      setNewProxyUrl('');
+    }
+  };
+
+  const removeProxyFromPool = (url: string) => {
+    setNetwork({
+      ...network,
+      proxy: {
+        ...network.proxy,
+        pool: network.proxy.pool.filter(p => p !== url),
+      },
+    });
+  };
+
   const removeExcludePhrase = (phrase: string) => {
     setFilters({
       ...filters,
@@ -140,6 +180,7 @@ export function AnalysisForm({ onJobStarted }: AnalysisFormProps) {
       reddit: credentials,
       filters,
       clustering,
+      network,
       use_cache: useCache,
     };
 
@@ -398,6 +439,182 @@ export function AnalysisForm({ onJobStarted }: AnalysisFormProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Proxy Settings */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowProxy(!showProxy)}
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+        >
+          {showProxy ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <Globe className="h-4 w-4" />
+          Proxy Settings
+          {network.proxy.enabled && (
+            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+              Enabled
+            </span>
+          )}
+        </button>
+
+        {showProxy && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="proxyEnabled"
+                checked={network.proxy.enabled}
+                onChange={(e) => setNetwork({
+                  ...network,
+                  proxy: { ...network.proxy, enabled: e.target.checked }
+                })}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="proxyEnabled" className="text-sm text-gray-700">
+                Enable proxy for Reddit API requests
+              </label>
+            </div>
+
+            {network.proxy.enabled && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Proxy Mode
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        value="single"
+                        checked={network.proxy.mode === 'single'}
+                        onChange={(e) => setNetwork({
+                          ...network,
+                          proxy: { ...network.proxy, mode: 'single' }
+                        })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Single Proxy</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        value="pool"
+                        checked={network.proxy.mode === 'pool'}
+                        onChange={(e) => setNetwork({
+                          ...network,
+                          proxy: { ...network.proxy, mode: 'pool' }
+                        })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Proxy Pool (rotate)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {network.proxy.mode === 'single' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        HTTP Proxy
+                      </label>
+                      <input
+                        type="text"
+                        value={network.proxy.single_http}
+                        onChange={(e) => setNetwork({
+                          ...network,
+                          proxy: { ...network.proxy, single_http: e.target.value }
+                        })}
+                        placeholder="http://user:pass@proxy:8080"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        HTTPS Proxy
+                      </label>
+                      <input
+                        type="text"
+                        value={network.proxy.single_https}
+                        onChange={(e) => setNetwork({
+                          ...network,
+                          proxy: { ...network.proxy, single_https: e.target.value }
+                        })}
+                        placeholder="http://user:pass@proxy:8080"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Proxy Pool
+                      </label>
+                      {network.proxy.pool.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {network.proxy.pool.map((url, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full max-w-xs truncate"
+                              title={url}
+                            >
+                              <span className="truncate">{url}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeProxyFromPool(url)}
+                                className="hover:text-blue-600 flex-shrink-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newProxyUrl}
+                          onChange={(e) => setNewProxyUrl(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addProxyToPool())}
+                          placeholder="http://user:pass@proxy:8080 or socks5://..."
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={addProxyToPool}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rotate every N requests
+                      </label>
+                      <input
+                        type="number"
+                        value={network.proxy.rotate_every_requests}
+                        onChange={(e) => setNetwork({
+                          ...network,
+                          proxy: { ...network.proxy, rotate_every_requests: parseInt(e.target.value) || 25 }
+                        })}
+                        min={1}
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500">
+                  Proxy helps bypass rate limits or access Reddit from restricted regions. 
+                  Supports HTTP, HTTPS, and SOCKS5 protocols.
+                </p>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Advanced Options */}

@@ -39,16 +39,26 @@ reddit:
   user_agent: "painminer/0.1 (personal research; contact: none)"
 
 # Network settings
+# Configure proxy for Reddit API access
 network:
   timeout_sec: 20
   proxies:
-    enabled: false
-    mode: "single"   # single | pool
+    enabled: false           # Set to true to enable proxy
+    mode: "single"           # single | pool
+    
+    # Single proxy mode - use one proxy for all requests
     single:
-      http: ""
-      https: ""
-    pool: []
-    rotate_every_requests: 25
+      http: ""               # Example: "http://user:pass@proxy.example.com:8080"
+      https: ""              # Example: "http://user:pass@proxy.example.com:8080"
+    
+    # Pool mode - rotate between multiple proxies
+    # Useful to avoid rate limiting or IP bans
+    pool:
+      # - "http://user:pass@proxy1.example.com:8080"
+      # - "http://user:pass@proxy2.example.com:8080"
+      # - "socks5://user:pass@proxy3.example.com:1080"
+      []
+    rotate_every_requests: 25  # Rotate proxy after this many requests (pool mode only)
 
 # Rate limiting settings
 # Be a good citizen and don't hammer the Reddit API

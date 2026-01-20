@@ -22,12 +22,13 @@ from painminer.config import (
     ClusteringConfig,
     CoreFilterConfig,
     FiltersConfig,
+    NetworkConfig,
     OutputConfig,
     PainminerConfig,
+    ProxySingleConfig,
     RedditConfig,
     SubredditConfig,
     ThrottlingConfig,
-    NetworkConfig,
 )
 from painminer.core_filter import create_core_filter
 from painminer.extract import create_extractor
@@ -95,11 +96,26 @@ class ClusteringInput(BaseModel):
     random_state: int = 42
 
 
+class ProxyConfigInput(BaseModel):
+    enabled: bool = False
+    mode: str = "single"  # single | pool
+    single_http: str = ""
+    single_https: str = ""
+    pool: list[str] = Field(default_factory=list)
+    rotate_every_requests: int = 25
+
+
+class NetworkConfigInput(BaseModel):
+    timeout_sec: int = 20
+    proxy: ProxyConfigInput = Field(default_factory=ProxyConfigInput)
+
+
 class AnalysisRequest(BaseModel):
     subreddits: list[SubredditInput]
     reddit: RedditCredentials
     filters: FiltersInput = Field(default_factory=FiltersInput)
     clustering: ClusteringInput = Field(default_factory=ClusteringInput)
+    network: NetworkConfigInput = Field(default_factory=NetworkConfigInput)
     use_cache: bool = True
 
 
@@ -197,12 +213,25 @@ def build_config(request: AnalysisRequest) -> PainminerConfig:
         random_state=request.clustering.random_state,
     )
     
+    # Build network config with proxy settings
+    network = NetworkConfig(
+        timeout_sec=request.network.timeout_sec,
+        proxies_enabled=request.network.proxy.enabled,
+        proxies_mode=request.network.proxy.mode,
+        proxies_single=ProxySingleConfig(
+            http=request.network.proxy.single_http,
+            https=request.network.proxy.single_https,
+        ),
+        proxies_pool=request.network.proxy.pool,
+        rotate_every_requests=request.network.proxy.rotate_every_requests,
+    )
+    
     return PainminerConfig(
         subreddits=subreddits,
         reddit=reddit,
         filters=filters,
         clustering=clustering,
-        network=NetworkConfig(),
+        network=network,
         throttling=ThrottlingConfig(),
         core_filter=CoreFilterConfig(),
         output=OutputConfig(),

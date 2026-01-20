@@ -187,6 +187,38 @@ clustering:
   random_state: 42        # Для воспроизводимости
 ```
 
+#### Сетевые настройки и Proxy
+
+Painminer поддерживает работу через прокси-сервер для обхода ограничений или доступа к Reddit из регионов с блокировкой.
+
+```yaml
+network:
+  timeout_sec: 20
+  proxies:
+    enabled: true           # Включить использование proxy
+    mode: "single"          # single | pool
+    
+    # Режим single - один прокси для всех запросов
+    single:
+      http: "http://user:pass@proxy.example.com:8080"
+      https: "http://user:pass@proxy.example.com:8080"
+    
+    # Режим pool - ротация между несколькими прокси
+    pool:
+      - "http://user:pass@proxy1.example.com:8080"
+      - "http://user:pass@proxy2.example.com:8080"
+      - "socks5://user:pass@proxy3.example.com:1080"
+    rotate_every_requests: 25  # Переключаться на следующий прокси каждые N запросов
+```
+
+**Поддерживаемые протоколы:**
+- HTTP/HTTPS прокси
+- SOCKS5 прокси
+
+**Режимы работы:**
+- **single** — один прокси для всех запросов
+- **pool** — пул прокси с автоматической ротацией для распределения нагрузки
+
 #### Фильтр основного объема
 
 ```yaml

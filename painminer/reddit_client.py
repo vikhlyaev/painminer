@@ -11,10 +11,12 @@ from datetime import datetime, timedelta
 from typing import Iterator, Optional
 
 import praw
+import requests
 from praw.models import Comment, MoreComments, Submission
 
 from painminer.cache import RedditCache
 from painminer.config import (
+    NetworkConfig,
     PainminerConfig,
     RedditConfig,
     SubredditConfig,
@@ -42,6 +44,7 @@ class RedditClient:
         self,
         reddit_config: RedditConfig,
         throttling_config: ThrottlingConfig,
+        network_config: Optional[NetworkConfig] = None,
         cache: Optional[RedditCache] = None,
         use_cache: bool = True,
     ) -> None:
@@ -51,27 +54,102 @@ class RedditClient:
         Args:
             reddit_config: Reddit API credentials
             throttling_config: Rate limiting configuration
+            network_config: Network and proxy configuration
             cache: Optional cache instance
             use_cache: Whether to use caching
         """
         self.reddit_config = reddit_config
         self.throttling_config = throttling_config
+        self.network_config = network_config or NetworkConfig()
         self.cache = cache or RedditCache()
         self.use_cache = use_cache
         
         self._reddit: Optional[praw.Reddit] = None
         self._last_request_time: float = 0
+        self._request_count: int = 0
+        self._current_proxy_index: int = 0
+    
+    def _get_proxies(self) -> Optional[dict[str, str]]:
+        """
+        Get proxy configuration for current request.
+        
+        Returns:
+            Dictionary with proxy settings or None if proxies disabled
+        """
+        if not self.network_config.proxies_enabled:
+            return None
+        
+        if self.network_config.proxies_mode == "single":
+            proxies = {}
+            if self.network_config.proxies_single.http:
+                proxies["http"] = self.network_config.proxies_single.http
+            if self.network_config.proxies_single.https:
+                proxies["https"] = self.network_config.proxies_single.https
+            return proxies if proxies else None
+        
+        elif self.network_config.proxies_mode == "pool":
+            pool = self.network_config.proxies_pool
+            if not pool:
+                return None
+            
+            # Get current proxy from pool
+            proxy_url = pool[self._current_proxy_index % len(pool)]
+            return {"http": proxy_url, "https": proxy_url}
+        
+        return None
+    
+    def _rotate_proxy_if_needed(self) -> None:
+        """Rotate to next proxy in pool if rotation threshold reached."""
+        if (
+            self.network_config.proxies_enabled
+            and self.network_config.proxies_mode == "pool"
+            and self.network_config.proxies_pool
+        ):
+            self._request_count += 1
+            if self._request_count >= self.network_config.rotate_every_requests:
+                self._request_count = 0
+                self._current_proxy_index += 1
+                pool_size = len(self.network_config.proxies_pool)
+                logger.debug(
+                    f"Rotating proxy to index {self._current_proxy_index % pool_size}"
+                )
+                # Reset Reddit instance to use new proxy
+                self._reddit = None
+    
+    def _create_session(self) -> requests.Session:
+        """
+        Create a requests session with proxy configuration.
+        
+        Returns:
+            Configured requests.Session instance
+        """
+        session = requests.Session()
+        
+        proxies = self._get_proxies()
+        if proxies:
+            session.proxies.update(proxies)
+            logger.info(f"Using proxy: {list(proxies.values())[0]}")
+        
+        session.timeout = self.network_config.timeout_sec
+        
+        return session
     
     def _get_reddit(self) -> praw.Reddit:
         """Get or create PRAW Reddit instance."""
         if self._reddit is None:
             try:
+                # Create session with proxy configuration
+                requestor_kwargs = {}
+                session = self._create_session()
+                requestor_kwargs["session"] = session
+                
                 self._reddit = praw.Reddit(
                     client_id=self.reddit_config.client_id,
                     client_secret=self.reddit_config.client_secret,
                     username=self.reddit_config.username,
                     password=self.reddit_config.password,
                     user_agent=self.reddit_config.user_agent,
+                    requestor_kwargs=requestor_kwargs,
                 )
                 # Verify authentication
                 _ = self._reddit.user.me()
@@ -82,7 +160,7 @@ class RedditClient:
         return self._reddit
     
     def _throttle(self) -> None:
-        """Apply rate limiting delay."""
+        """Apply rate limiting delay and handle proxy rotation."""
         now = time.time()
         
         # Random delay between min and max
@@ -98,6 +176,9 @@ class RedditClient:
             time.sleep(delay_sec - elapsed)
         
         self._last_request_time = time.time()
+        
+        # Check if we need to rotate proxy
+        self._rotate_proxy_if_needed()
     
     def _retry_with_backoff(self, func, *args, **kwargs):
         """Execute function with exponential backoff on failure."""
@@ -366,6 +447,7 @@ def create_reddit_client(
     return RedditClient(
         reddit_config=config.reddit,
         throttling_config=config.throttling,
+        network_config=config.network,
         cache=cache,
         use_cache=use_cache,
     )
