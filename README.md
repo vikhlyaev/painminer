@@ -1,63 +1,63 @@
 # Painminer
 
-A local-only Python CLI tool that extracts repeating "user pain" statements from selected Reddit subreddits, clusters them by intent, and outputs small iOS app ideas (1–3 core functions).
+Локальный Python CLI инструмент, который извлекает повторяющиеся утверждения о "боли пользователей" из выбранных subreddit-ов Reddit, группирует их по намерениям и выводит идеи небольших iOS приложений (1-3 основные функции).
 
-## Features
+## Возможности
 
-- **Reddit Integration**: Uses official Reddit API via PRAW (OAuth app credentials)
-- **Pain Extraction**: Detects pain/frustration statements using configurable phrase matching
-- **Smart Clustering**: Groups similar pain statements using TF-IDF + KMeans or simple hash-based methods
-- **Core Scope Filter**: Filters ideas to focus on simple, local-only iOS apps
-- **Idea Generation**: Produces actionable app ideas with core functions, screens, and MVP complexity
-- **File Caching**: Caches Reddit data to avoid repeated API calls
-- **Reproducible Output**: Deterministic results given the same configuration
+- **Интеграция с Reddit**: Использует официальный API Reddit через PRAW (учетные данные OAuth приложения)
+- **Извлечение проблем**: Обнаруживает утверждения о боли/фрустрации с помощью настраиваемого поиска фраз
+- **Умная кластеризация**: Группирует похожие утверждения о проблемах, используя TF-IDF + KMeans или простые hash-методы
+- **Фильтр основного объема**: Фильтрует идеи для фокуса на простых, локальных iOS приложениях
+- **Генерация идей**: Производит действенные идеи приложений с основными функциями, экранами и сложностью MVP
+- **Кеширование файлов**: Кеширует данные Reddit, чтобы избежать повторных вызовов API
+- **Воспроизводимый вывод**: Детерминированные результаты при одинаковой конфигурации
 
-## Installation
+## Установка
 
-### Requirements
+### Требования
 
 - Python 3.11+
-- Reddit API credentials (see below)
+- Учетные данные Reddit API (см. ниже)
 
-### Install Dependencies
+### Установка зависимостей
 
 ```bash
-# Clone or download the repository
+# Клонирование или загрузка репозитория
 cd painminer
 
-# Create virtual environment (recommended)
+# Создание виртуального окружения (рекомендуется)
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # На Windows: venv\Scripts\activate
 
-# Install the package
+# Установка пакета
 pip install -e .
 
-# Or install dependencies directly
+# Или установка зависимостей напрямую
 pip install praw httpx pyyaml scikit-learn pydantic
 ```
 
-### Development Installation
+### Установка для разработки
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-## Setting Up Reddit API Credentials
+## Настройка учетных данных Reddit API
 
-1. Go to https://www.reddit.com/prefs/apps
-2. Click "Create App" or "Create Another App"
-3. Fill in the details:
-   - **name**: painminer (or any name)
-   - **App type**: Select "script"
-   - **description**: Personal research tool
-   - **about url**: (leave blank)
+1. Перейдите на https://www.reddit.com/prefs/apps
+2. Нажмите "Create App" или "Create Another App"
+3. Заполните детали:
+   - **name**: painminer (или любое имя)
+   - **App type**: Выберите "script"
+   - **description**: Инструмент для личных исследований
+   - **about url**: (оставьте пустым)
    - **redirect uri**: http://localhost:8080
-4. Click "Create app"
-5. Note down:
-   - **client_id**: The string under "personal use script"
-   - **client_secret**: The secret shown
+4. Нажмите "Create app"
+5. Запишите:
+   - **client_id**: Строка под "personal use script"
+   - **client_secret**: Показанный секрет
 
-### Set Environment Variables
+### Установка переменных окружения
 
 ```bash
 export REDDIT_CLIENT_ID="your_client_id"
@@ -66,10 +66,10 @@ export REDDIT_USERNAME="your_reddit_username"
 export REDDIT_PASSWORD="your_reddit_password"
 ```
 
-Or create a `.env` file and source it:
+Или создайте файл `.env` и подключите его:
 
 ```bash
-# .env file
+# файл .env
 export REDDIT_CLIENT_ID="abc123"
 export REDDIT_CLIENT_SECRET="xyz789"
 export REDDIT_USERNAME="myusername"
@@ -80,59 +80,77 @@ export REDDIT_PASSWORD="mypassword"
 source .env
 ```
 
-## Usage
+## Использование
 
-### Basic Usage
+### Базовое использование
 
 ```bash
-# Run with default sample config, output to Markdown
+# Запуск с образцовой конфигурацией по умолчанию, вывод в Markdown
 python -m painminer run --config sample_config.yaml --out out.md
 
-# Run with JSON output
+# Запуск с выводом в JSON
 python -m painminer run --config sample_config.yaml --out report.json
 
-# Run without cache (re-fetch all data)
+# Запуск без кеша (повторная загрузка всех данных)
 python -m painminer run --config config.yaml --out out.md --no-cache
 
-# Verbose output
+# Подробный вывод
 python -m painminer run --config config.yaml --out out.md --verbose
 ```
 
-### Cache Management
+### Управление кешем
 
 ```bash
-# Show cache statistics
+# Показать статистику кеша
 python -m painminer cache --stats
 
-# Clear all cached data
+# Очистить все кешированные данные
 python -m painminer cache --clear
 ```
 
-### Help
+### Справка
 
 ```bash
 python -m painminer --help
 python -m painminer run --help
 ```
 
-## Configuration
+### Веб-интерфейс
 
-The tool is configured via a YAML file. See `sample_config.yaml` for a complete example.
+Painminer включает современный веб-интерфейс, построенный с помощью Next.js и Tailwind CSS.
 
-### Key Configuration Sections
+```bash
+# Запуск API сервера (из корня проекта)
+uvicorn painminer.api:app --reload --host 0.0.0.0 --port 8000
 
-#### Subreddits
+# В другом терминале запуск веб-интерфейса
+cd web
+npm install
+npm run dev
+```
+
+Затем откройте [http://localhost:3000](http://localhost:3000) в вашем браузере.
+
+См. [web/README.md](web/README.md) для более подробной информации.
+
+## Конфигурация
+
+Инструмент настраивается через YAML файл. См. `sample_config.yaml` для полного примера.
+
+### Ключевые разделы конфигурации
+
+#### Subreddit-ы
 
 ```yaml
 subreddits:
   - name: "ADHD"
-    period_days: 30      # Look back this many days
-    min_upvotes: 10      # Minimum post score
-    max_posts: 200       # Maximum posts to fetch
-    max_comments_per_post: 50  # Comments per post
+    period_days: 30      # Просмотреть назад на это количество дней
+    min_upvotes: 10      # Минимальный рейтинг поста
+    max_posts: 200       # Максимальное количество постов для загрузки
+    max_comments_per_post: 50  # Комментариев на пост
 ```
 
-#### Reddit Credentials
+#### Учетные данные Reddit
 
 ```yaml
 reddit:
@@ -143,7 +161,7 @@ reddit:
   user_agent: "painminer/0.1 (personal research)"
 ```
 
-#### Filters
+#### Фильтры
 
 ```yaml
 filters:
@@ -159,17 +177,17 @@ filters:
   min_pain_length: 12
 ```
 
-#### Clustering
+#### Кластеризация
 
 ```yaml
 clustering:
-  method: "tfidf_kmeans"  # or "simple_hash"
+  method: "tfidf_kmeans"  # или "simple_hash"
   k_min: 5
   k_max: 20
-  random_state: 42        # For reproducibility
+  random_state: 42        # Для воспроизводимости
 ```
 
-#### Core Filter
+#### Фильтр основного объема
 
 ```yaml
 core_filter:

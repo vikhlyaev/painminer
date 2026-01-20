@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "painminer"
-version = "0.1.0"
+version = "1.0.0"
 description = "CLI tool for extracting user pain statements from Reddit and generating iOS app ideas"
 readme = "README.md"
 requires-python = ">=3.11"
